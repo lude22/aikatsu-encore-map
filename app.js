@@ -154,8 +154,9 @@
       name: 'leaflet',
       async init(container, onSelect, onMove) {
         map = L.map(container, { zoomControl: !isMobile(), worldCopyJump: true }).setView([JAPAN.lat, JAPAN.lng], isMobile() ? 4 : 5);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        // 国土地理院「淡色地図」：情報量が少なくピンが見やすい（無料・APIキー不要）
+        L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {
+          maxZoom: 18, attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル</a>',
         }).addTo(map);
         group = L.markerClusterGroup({
           showCoverageOnHover: false, maxClusterRadius: 50, chunkedLoading: true, spiderfyOnMaxZoom: true,
