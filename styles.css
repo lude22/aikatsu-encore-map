@@ -1,78 +1,196 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>アイカツ！アンコール 設置店マップ</title>
-  <meta name="description" content="アーケード「アイカツ！アンコール」の取扱店舗を地図で探せる非公式マップ。現在地から近いお店をすぐに表示します。">
-  <meta name="theme-color" content="#e8418c">
-  <meta property="og:title" content="アイカツ！アンコール 設置店マップ（非公式）">
-  <meta property="og:description" content="全国の取扱店舗を地図で検索。現在地から近いお店がわかります。">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 4l7.6 18.2L58 24l-14 12.6L48 56 32 46 16 56l4-19.4L6 24l18.4-1.8z' fill='%23e8418c'/%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="app">
-    <aside class="panel" id="panel">
-      <button class="grab" id="grab" aria-label="リストの開閉"><span></span></button>
-      <header class="brand">
-        <div class="brand-mark" aria-hidden="true">★</div>
-        <div>
-          <h1>アイカツ！アンコール<br><span>設置店マップ</span></h1>
-          <p class="sub">非公式 ・ <span id="source">取扱店舗一覧 2026/10/2時点</span></p>
-        </div>
-      </header>
+:root {
+  --pink: #e8418c;
+  --pink-deep: #c2246c;
+  --violet: #8a5cf6;
+  --sky: #38bdf8;
+  --ink: #2a1f2d;
+  --ink-2: #6b5a70;
+  --line: #f1dbe7;
+  --bg: #fff;
+  --bg-2: #fff6fa;
+  --chip: #fde7f1;
+  --shadow: 0 10px 30px -12px rgba(194, 36, 108, .35);
+  --grad: linear-gradient(120deg, #ff6fae 0%, #e8418c 45%, #8a5cf6 100%);
+  --panel-w: 400px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #f7eaf2; --ink-2: #c4afc0; --line: #3a2a38; --bg: #1a1219; --bg-2: #22171f; --chip: #3a1f2e;
+    --shadow: 0 10px 30px -12px rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: "Noto Sans JP", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; }
+svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
-      <div class="controls">
-        <button class="locate" id="locate">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.2" class="dot"/></svg>
-          <span>現在地から近いお店を探す</span>
-        </button>
-        <div class="row">
-          <label class="search">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
-            <input id="q" type="search" placeholder="店名・住所で検索（例: イオン、渋谷）" autocomplete="off">
-          </label>
-          <select id="pref" aria-label="都道府県で絞り込み"><option value="">全国</option></select>
-        </div>
-      </div>
+.app { display: flex; height: 100dvh; }
+.map-wrap { position: relative; flex: 1; min-width: 0; }
+#map { position: absolute; inset: 0; background: #eef0f4; }
 
-      <div class="status" id="status" role="status"></div>
-      <ol class="list" id="list"></ol>
+/* ---------- panel ---------- */
+.panel {
+  width: var(--panel-w); flex: none; display: flex; flex-direction: column;
+  background: var(--bg); border-right: 1px solid var(--line); z-index: 2; min-height: 0;
+}
+.grab { display: none; }
+.brand {
+  display: flex; gap: 14px; align-items: center;
+  padding: 18px 20px 14px;
+  background:
+    radial-gradient(circle at 92% 18%, rgba(255,255,255,.55) 0 2px, transparent 3px),
+    radial-gradient(circle at 80% 70%, rgba(255,255,255,.45) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 64% 30%, rgba(255,255,255,.4) 0 1px, transparent 2px),
+    var(--grad);
+  color: #fff;
+}
+.brand-mark {
+  width: 44px; height: 44px; border-radius: 14px; flex: none;
+  display: grid; place-items: center; font-size: 24px;
+  background: rgba(255,255,255,.22); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.5);
+}
+.brand h1 {
+  margin: 0; font-family: "M PLUS Rounded 1c", sans-serif; font-weight: 800;
+  font-size: 15px; line-height: 1.25; letter-spacing: .02em;
+}
+.brand h1 span { font-size: 22px; }
+.brand .sub { margin: 4px 0 0; font-size: 11.5px; opacity: .9; }
 
-      <footer class="foot">
-        店舗情報は公式の取扱店舗一覧をもとにしています。設置状況は予告なく変わることがあるため、お出かけ前に店舗へご確認ください。位置は住所から自動算出しているため、多少ずれる場合があります。
-      </footer>
-    </aside>
+.controls { padding: 14px 16px 10px; display: grid; gap: 10px; border-bottom: 1px solid var(--line); }
+.locate {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  border: 0; border-radius: 999px; padding: 12px 16px; cursor: pointer;
+  background: var(--grad); color: #fff; font-weight: 700; font-size: 15px;
+  box-shadow: var(--shadow); transition: transform .15s, filter .15s;
+}
+.locate:hover { filter: brightness(1.05); }
+.locate:active { transform: scale(.98); }
+.locate .dot { fill: currentColor; stroke: none; }
+.locate.busy svg { animation: spin 1.2s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.row { display: flex; gap: 8px; }
+.search {
+  flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0;
+  border: 1.5px solid var(--line); border-radius: 12px; padding: 0 10px; background: var(--bg-2);
+}
+.search svg { color: var(--ink-2); width: 18px; height: 18px; flex: none; }
+.search input { border: 0; outline: 0; background: none; width: 100%; padding: 10px 0; font-size: 14px; }
+.search:focus-within, select:focus { border-color: var(--pink); }
+select {
+  border: 1.5px solid var(--line); border-radius: 12px; padding: 0 10px; background: var(--bg-2);
+  font-size: 14px; outline: 0; max-width: 110px;
+}
 
-    <main class="map-wrap">
-      <div id="map" aria-label="店舗地図"></div>
-      <div class="map-note" id="mapNote" hidden></div>
-    </main>
-  </div>
+.status { padding: 10px 18px 6px; font-size: 12.5px; color: var(--ink-2); min-height: 32px; }
+.status b { color: var(--pink-deep); }
+@media (prefers-color-scheme: dark) { .status b { color: #ff8cc0; } }
+.status.warn { color: #b45309; }
 
-  <template id="tpl-item">
-    <li class="item">
-      <button class="item-main">
-        <span class="dist"></span>
-        <span class="name"></span>
-        <span class="addr"></span>
-      </button>
-      <div class="item-actions">
-        <a class="act route" target="_blank" rel="noopener">経路</a>
-        <a class="act tel">電話</a>
-      </div>
-    </li>
-  </template>
+.list { list-style: none; margin: 0; padding: 0 10px 10px; overflow-y: auto; flex: 1; min-height: 0; }
+.item {
+  display: flex; align-items: stretch; gap: 6px; border-radius: 14px; margin: 4px 0;
+  transition: background .15s;
+}
+.item:hover, .item.active { background: var(--bg-2); }
+.item.active { box-shadow: inset 3px 0 0 var(--pink); }
+.item-main {
+  flex: 1; min-width: 0; text-align: left; border: 0; background: none; cursor: pointer;
+  padding: 10px 8px 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 2px 8px;
+}
+.item .name { grid-column: 1; grid-row: 1; font-weight: 700; font-size: 14.5px; line-height: 1.35; }
+.item .addr { grid-column: 1 / -1; font-size: 12px; color: var(--ink-2); line-height: 1.4; }
+.item .dist {
+  grid-column: 2; grid-row: 1; align-self: start; white-space: nowrap;
+  font-size: 12px; font-weight: 700; color: var(--pink-deep); background: var(--chip);
+  border-radius: 999px; padding: 2px 8px;
+}
+@media (prefers-color-scheme: dark) { .item .dist { color: #ff9ccb; } }
+.item .dist:empty { display: none; }
+.item-actions { display: flex; flex-direction: column; justify-content: center; gap: 4px; padding-right: 6px; }
+.act {
+  font-size: 11.5px; font-weight: 700; text-decoration: none; text-align: center;
+  border: 1.5px solid var(--line); border-radius: 8px; padding: 3px 9px; color: var(--ink);
+}
+.act:hover { border-color: var(--pink); color: var(--pink); }
+.act[hidden] { display: none; }
+.badge-approx { font-size: 10.5px; color: var(--ink-2); border: 1px dashed var(--ink-2); border-radius: 6px; padding: 0 4px; margin-left: 4px; font-weight: 500; }
+.empty { padding: 28px 16px; text-align: center; color: var(--ink-2); font-size: 13px; line-height: 1.7; }
 
-  <script src="config.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
-  <script src="app.js"></script>
-</body>
-</html>
+.foot { font-size: 10.5px; color: var(--ink-2); padding: 10px 16px 14px; border-top: 1px solid var(--line); line-height: 1.6; }
+
+.map-note {
+  position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 500;
+  background: var(--bg); color: var(--ink); border-radius: 999px; padding: 7px 14px; font-size: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15); max-width: calc(100% - 24px); text-align: center;
+}
+
+/* ---------- markers ---------- */
+.pin {
+  width: 26px; height: 26px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  background: var(--grad); border: 2.5px solid #fff; box-shadow: 0 3px 8px rgba(120,20,70,.4);
+  display: grid; place-items: center; cursor: pointer;
+}
+.pin::after { content: "★"; transform: rotate(45deg); color: #fff; font-size: 11px; line-height: 1; }
+.pin.approx { opacity: .75; }
+.pin.active { width: 34px; height: 34px; }
+.me {
+  width: 18px; height: 18px; border-radius: 50%; background: #2f80ff; border: 3px solid #fff;
+  box-shadow: 0 0 0 6px rgba(47,128,255,.25), 0 2px 6px rgba(0,0,0,.3);
+}
+.cluster {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--grad); color: #fff; font-weight: 800; font-size: 13px;
+  border: 3px solid rgba(255,255,255,.9); box-shadow: 0 4px 12px rgba(120,20,70,.35);
+  font-family: "M PLUS Rounded 1c", sans-serif;
+}
+.cluster.m { width: 48px; height: 48px; font-size: 14px; }
+.cluster.l { width: 56px; height: 56px; font-size: 15px; }
+.leaflet-div-icon { background: none; border: 0; }
+
+/* ---------- info window ---------- */
+.info { font-family: "Noto Sans JP", sans-serif; color: #2a1f2d; min-width: 220px; max-width: 280px; }
+.info h3 { margin: 0 0 4px; font-size: 15px; line-height: 1.35; }
+.info p { margin: 0 0 8px; font-size: 12.5px; color: #6b5a70; line-height: 1.5; }
+.info .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.info a {
+  font-size: 12.5px; font-weight: 700; text-decoration: none; border-radius: 999px; padding: 6px 12px;
+  background: #fde7f1; color: #c2246c;
+}
+.info a.primary { background: linear-gradient(120deg,#ff6fae,#e8418c 45%,#8a5cf6); color: #fff; }
+.info .note { font-size: 11px; color: #8a7a8e; margin: 8px 0 0; }
+
+/* ---------- mobile: bottom sheet ---------- */
+@media (max-width: 760px) {
+  .app { display: block; position: relative; }
+  .map-wrap { position: absolute; inset: 0; }
+  .panel {
+    position: absolute; left: 0; right: 0; bottom: 0; width: auto; height: 46dvh;
+    border-right: 0; border-radius: 20px 20px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.18);
+    transition: height .25s ease; overflow: hidden; z-index: 1000;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .panel.expanded { height: 86dvh; }
+  .panel.collapsed { height: 168px; }
+  .grab {
+    display: block; position: absolute; top: 0; left: 0; right: 0; height: 22px; border: 0; background: none; z-index: 3; cursor: pointer;
+  }
+  .grab span { display: block; width: 44px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.75); margin: 8px auto 0; }
+  .brand { padding: 22px 16px 10px; gap: 10px; }
+  .brand-mark { width: 34px; height: 34px; font-size: 18px; border-radius: 10px; }
+  .brand h1 { font-size: 12px; }
+  .brand h1 br { display: none; }
+  .brand h1 span { font-size: 16px; margin-left: 4px; }
+  .brand .sub { font-size: 10.5px; }
+  .controls { padding: 10px 12px 8px; gap: 8px; }
+  .locate { padding: 10px 14px; font-size: 14px; }
+  .foot { display: none; }
+  .map-note { top: 10px; }
+}
