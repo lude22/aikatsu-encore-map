@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>アイカツ！アンコール 設置店マップ</title>
+  <meta name="description" content="アーケード「アイカツ！アンコール」の取扱店舗を地図で探せる非公式マップ。現在地から近いお店をすぐに表示します。">
+  <meta name="theme-color" content="#e8418c">
+  <meta property="og:title" content="アイカツ！アンコール 設置店マップ（非公式）">
+  <meta property="og:description" content="全国の取扱店舗を地図で検索。現在地から近いお店がわかります。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 4l7.6 18.2L58 24l-14 12.6L48 56 32 46 16 56l4-19.4L6 24l18.4-1.8z' fill='%23e8418c'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="panel" id="panel">
+      <button class="grab" id="grab" aria-label="リストの開閉"><span></span></button>
+      <header class="brand">
+        <div class="brand-mark" aria-hidden="true">★</div>
+        <div>
+          <h1>アイカツ！アンコール<br><span>設置店マップ</span></h1>
+          <p class="sub">非公式 ・ <span id="source">取扱店舗一覧 2026/10/2時点</span></p>
+        </div>
+      </header>
+
+      <div class="controls">
+        <button class="locate" id="locate">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.2" class="dot"/></svg>
+          <span>現在地から近いお店を探す</span>
+        </button>
+        <div class="row">
+          <label class="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+            <input id="q" type="search" placeholder="店名・住所で検索（例: イオン、渋谷）" autocomplete="off">
+          </label>
+          <select id="pref" aria-label="都道府県で絞り込み"><option value="">全国</option></select>
+        </div>
+      </div>
+
+      <div class="status" id="status" role="status"></div>
+      <ol class="list" id="list"></ol>
+
+      <footer class="foot">
+        店舗情報は公式の取扱店舗一覧をもとにしています。設置状況は予告なく変わることがあるため、お出かけ前に店舗へご確認ください。位置は住所から自動算出しているため、多少ずれる場合があります。
+      </footer>
+    </aside>
+
+    <main class="map-wrap">
+      <div id="map" aria-label="店舗地図"></div>
+      <div class="map-note" id="mapNote" hidden></div>
+    </main>
+  </div>
+
+  <template id="tpl-item">
+    <li class="item">
+      <button class="item-main">
+        <span class="dist"></span>
+        <span class="name"></span>
+        <span class="addr"></span>
+      </button>
+      <div class="item-actions">
+        <a class="act route" target="_blank" rel="noopener">経路</a>
+        <a class="act tel">電話</a>
+      </div>
+    </li>
+  </template>
+
+  <script src="config.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
